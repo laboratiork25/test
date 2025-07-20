@@ -315,7 +315,7 @@ async function createImage(title, username, groupName, profilePicBuffer, isGoodb
         ctx.shadowColor = 'rgba(255, 255, 255, 0.9)'
         ctx.shadowBlur = 25
         ctx.fillStyle = '#ffffff'
-        ctx.fillText('⭑⭒━━━✦☾⋆⁺₊✧ vare ❀ bot ✧₊⁺⋆☽✦━━━⭒⭑', centerX, decorationY)
+        ctx.fillText('⭑⭒━━━✦☾⋆⁺₊✧ developed by vare ✧₊⁺⋆☽✦━━━⭒⭑', centerX, decorationY)
         ctx.restore()
 
         return canvas.toBuffer('image/png')

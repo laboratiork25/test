@@ -228,7 +228,7 @@ handler.before = async (m, { conn }) => {
         let reward = Math.floor(Math.random() * 100) + 50
         let exp = 500
         if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
-        global.db.data.users[m.sender].euro = (global.db.data.users[m.sender].euro || 0) + reward
+        global.db.data.users[m.sender].limit = (global.db.data.users[m.sender].limit || 0) + reward
         global.db.data.users[m.sender].exp = (global.db.data.users[m.sender].exp || 0) + exp
         await conn.sendMessage(m.chat, {
             react: {
@@ -247,9 +247,10 @@ handler.before = async (m, { conn }) => {
 ┃ 『  』👤 \`Artista:\` *${game.track.artist}*
 ┃
 ┃ 『 🎁 』 \`Vincite:\`
-│ ➤  \`${reward}\` *euro*
+│ ➤  \`${reward}\` *UnityCoins*
 │ ➤  \`${exp}\` *exp*
 ┃
+┃ 💰 *Saldo attuale:* ${global.db.data.users[m.sender].limit} UnityCoins
 ╰⭒─ׄ─ׅ─ׄ─⭒`,
             buttons: [
                 {

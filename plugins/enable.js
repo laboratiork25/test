@@ -28,6 +28,7 @@ const features = [
     { key: 'antivoip', label: 'Antivoip' },
     { key: 'antimedia', label: 'Antimedia' },
     { key: 'antisondaggi', label: 'Antisondaggi' },
+    { key: 'antispamcomandi', label: 'AntispamComandi', ownerOnly: true },
 ];
 
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isROwner }) => {
@@ -46,7 +47,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
             state = chatData[f.key];
         }
         let emoji = state ? '🟢' : '🔴';
-        return `┃◈┃${emoji} *${f.label}*`;
+        let ownerTag = f.ownerOnly ? ' (Owner)' : '';
+        return `┃◈┃${emoji} *${f.label}*${ownerTag}`;
     }).join('\n');
 
     // Testo menu abbellito stile menu principale
@@ -109,6 +111,11 @@ ${statusList}
             participant: '0@s.whatsapp.net'
         };
         return await conn.sendMessage(m.chat, menuResponse, { quoted: defaultMsg });
+    }
+
+    // SOLO OWNER può modificare le funzioni ownerOnly
+    if (featureObj.ownerOnly && !(isOwner || isROwner)) {
+        return conn.reply(m.chat, '❌ Solo il proprietario può attivare/disattivare questa funzione.', m);
     }
 
     // Determine action (enable/disattiva)

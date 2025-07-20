@@ -31,6 +31,54 @@ export async function handler(chatUpdate) {
         return
     if (global.db.data == null)
         await global.loadDatabase()
+
+    // --- INTEGRAZIONE NUOVO ANTISPAM COMANDI (marameo) ---
+    global.ignoredUsersGlobal = global.ignoredUsersGlobal || new Set()
+    global.ignoredUsersGroup = global.ignoredUsersGroup || {}
+    global.groupSpam = global.groupSpam || {}
+
+    const isOwner = (() => {
+        try {
+            const isROwner = [conn?.decodeJid?.(global?.conn?.user?.id), ...(global.owner || []).map(([number]) => number)]
+                .map(v => v && v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+                .includes(m.sender)
+            return isROwner || m.fromMe
+        } catch { return false }
+    })();
+
+    if (m.isGroup && !isOwner) {
+        if (!global.groupSpam[m.chat]) {
+            global.groupSpam[m.chat] = {
+                count: 0,
+                firstCommandTimestamp: 0,
+                isSuspended: false
+            };
+        }
+
+        const groupData = global.groupSpam[m.chat];
+        const now = Date.now();
+
+        if (groupData.isSuspended) {
+            return; // Ignora silenziosamente
+        }
+        if (now - groupData.firstCommandTimestamp > 60000) {
+            groupData.count = 1;
+            groupData.firstCommandTimestamp = now;
+        } else {
+            groupData.count++;
+        }
+        if (groupData.count > 2) { // limite di 15
+            groupData.isSuspended = true;
+            await this.reply(m.chat, `『 ⚠ 』 Anti-spam comandi\n\n> Rilevati troppi comandi in un minuto, aspettate 10 secondi prima di riutilizzare i comandi.`, m);
+            setTimeout(() => {
+                delete global.groupSpam[m.chat];
+                console.log(`[Anti-Spam] Comandi riattivati per il gruppo: ${m.chat}`);
+            }, 10000);
+            return;
+        }
+    }
+    // --- FINE INTEGRAZIONE ANTISPAM ---
+
     try {
         m = smsg(this, m) || m
         if (!m)
@@ -510,62 +558,7 @@ export async function participantsUpdate({ id, participants, action }) {
     if (global.db.data == null)
         await loadDatabase()
     let chat = global.db.data.chats[id] || {}
-    let text = ''
     switch (action) {
-        case 'add':
-        case 'remove':
-            if (chat.welcome) {
-                let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
-                for (let user of participants) {
-                    let pp = fs.readFileSync('./src/profilo.png')
-                    try {
-                        pp = await this.profilePictureUrl(user, 'image')
-                    } catch (e) {
-                    } finally {
-                        let apii = await this.getFile(pp)
-                        let nomeDelBot = global.db.data.nomedelbot || `𝐂𝐡𝐚𝐭𝐔𝐧𝐢𝐭𝐲-𝐁𝐨𝐭`
-                        text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Benvenuto, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || 'bot') :
-                            (chat.sBye || this.bye || conn.bye || 'Addio, @user!')).replace('@user', '@' + user.split('@')[0])
-                        this.sendMessage(id, { 
-                            text: text, 
-                            contextInfo:{ 
-                                mentionedJid:[user],
-                                forwardingScore: 99,
-                                isForwarded: true, 
-                               forwardedNewsletterMessageInfo: {
-                               newsletterJid: '120363259442839354@newsletter',
-                               serverMessageId: '', newsletterName: `${nomeDelBot}` },
-                               externalAdReply: {
-                                    "title": `${msg}`, 
- "body": ``, 
-  "previewType": "PHOTO",
-  "thumbnailUrl": ``, 
-  "thumbnail": apii.data,
-  "mediaType": 1
-                                }
-                            }
-                        }) 
-                    } 
-                } 
-            }
-            
-            if (chat.welcome) {
-                let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
-                for (let user of participants) {
-                    let pp = fs.readFileSync('./src/profilo.png')
-                    try {
-                        pp = await this.profilePictureUrl(user, 'image')
-                    } catch (e) {
-                    } finally {
-                        let nomeDelBot = global.db.data.nomedelbot || `𝐂𝐡𝐚𝐭𝐔𝐧𝐢𝐭𝐲-𝐁𝐨𝐭`
-                        let apii = await this.getFile(pp)
-                      
-                                
-                            
-                    } 
-                } 
-            }
-            break;
         case 'promote':
         case 'demote':
             // Disabilita i messaggi automatici per promozioni/demozioni
@@ -628,7 +621,7 @@ global.dfail = (type, m, conn) => {
         mods: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐥𝐨 𝐩𝐨𝐬𝐬𝐨𝐧𝐨 𝐮𝐭𝐢𝐥𝐢𝐳𝐳𝐚𝐫𝐞 𝐬𝐨𝐥𝐨 𝐚𝐝𝐦𝐢𝐧 𝐞 𝐨𝐰𝐧𝐞𝐫 ⚙️',
         premium: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐞̀ 𝐩𝐞𝐫 𝐦𝐞𝐦𝐛𝐫𝐢 𝐩𝐫𝐞𝐦𝐢𝐮𝐦 ✅',
         group: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐩𝐮𝐨𝐢 𝐮𝐭𝐢𝐥𝐢𝐳𝐳𝐚𝐫𝐥𝐨 𝐢𝐧 𝐮𝐧 𝐠𝐫𝐮𝐩𝐩𝐨 👥',
-        private: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐩𝐮𝐨𝐢 𝐮𝐭𝐢𝐥𝐢𝐧𝐢𝐳𝐳𝐚𝐫𝐥𝐨 𝐢𝐧 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐭𝐚 👤',
+        private: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐩𝐮𝐨𝐢 𝐮𝐭𝐢𝐥𝐢𝐧𝐢𝐳𝐧𝐚𝐫𝐥𝐨 𝐢𝐧 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐭𝐚 👤',
         admin: '𝐐𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐞̀ 𝐩𝐞𝐫 𝐬𝐨𝐥𝐢 𝐚𝐝𝐦𝐢𝐧 👑',
         botAdmin: '𝐃𝐞𝐯𝐢 𝐝𝐚𝐫𝐞 𝐚𝐝𝐦𝐢𝐧 𝐚𝐥 𝐛𝐨𝐭 👑',
         restrict: '🔐 𝐑𝐞𝐬𝐭𝐫𝐢𝐜𝐭 𝐞 𝐝𝐢𝐬𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐨 🔐'}[type]

@@ -321,11 +321,11 @@ handler.before = async (m, { conn }) => {
         
         // Inizializza il portafoglio se non esiste
         if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
-        if (global.db.data.users[m.sender].money == null) global.db.data.users[m.sender].money = 0
+        if (global.db.data.users[m.sender].limit == null) global.db.data.users[m.sender].limit = 0
         if (global.db.data.users[m.sender].exp == null) global.db.data.users[m.sender].exp = 0
 
-        // Aggiungi UnityCoins e exp
-        global.db.data.users[m.sender].money = Number(global.db.data.users[m.sender].money) + Number(reward)
+        // Aggiungi UnityCoins e exp (usa .limit come saldo portafoglio)
+        global.db.data.users[m.sender].limit = Number(global.db.data.users[m.sender].limit) + Number(reward)
         global.db.data.users[m.sender].exp = Number(global.db.data.users[m.sender].exp) + Number(exp)
 
         // Forza la scrittura del database e aggiorna la cache in memoria
@@ -344,7 +344,7 @@ handler.before = async (m, { conn }) => {
 ┃ • ${reward} 🪙 UnityCoins${timeBonus > 0 ? ` (+${timeBonus} bonus velocità)` : ''}
 ┃ • ${exp} 🆙 EXP
 ┃
-┃ 💰 *Saldo attuale:* ${global.db.data.users[m.sender].money} UnityCoins
+┃ 💰 *Saldo attuale:* ${global.db.data.users[m.sender].limit} UnityCoins
 ╰━━━━━━━━━━━━━━━━╯
 
 > \`vare ✧ bot\``
