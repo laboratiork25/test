@@ -1,29 +1,34 @@
 import axios from 'axios';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text || !text.includes('tiktok')) {
+  if (!text || !/^https?:\/\/(www\.)?(vt|tiktok)\.com/.test(text)) {
     return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} <link TikTok>\n\n📌 Esempio:\n${usedPrefix + command} https://vt.tiktok.com/ZSjXNEnbC/`);
   }
 
-  try {
-    const apiUrl = `https://api.siputzx.my.id/api/tiktok?url=${encodeURIComponent(text.trim())}`;
-    const { data } = await axios.get(apiUrl);
+  const api = `https://api.siputzx.my.id/api/tiktok?url=${encodeURIComponent(text)}`;
 
-    if (!data || !data.result || !data.result.video) {
-      return m.reply('❌ Nessun video trovato. Verifica il link.');
+  try {
+    const { data } = await axios.get(api);
+
+    if (!data || !data.result) {
+      return m.reply('⚠️ Nessun risultato valido trovato. Forse il link è scaduto.');
     }
 
-    const videoUrl = data.result.video;
-    const caption = `🎵 *TikTok scaricato con successo!*\n\n📥 Autore: ${data.result.author.nickname || 'Sconosciuto'}\n📃 Descrizione: ${data.result.desc || 'Nessuna'}\n\n🔗 Link originale:\n${text}`;
+    const result = data.result;
+    const video = result.video;
+
+    if (!video) {
+      return m.reply('⚠️ Il video non è disponibile o non può essere scaricato.');
+    }
 
     await conn.sendMessage(m.chat, {
-      video: { url: videoUrl },
-      caption,
+      video: { url: video },
+      caption: `🎵 *TikTok scaricato con successo!*\n👤 Autore: ${result.author?.nickname || 'Sconosciuto'}\n📝 Descrizione: ${result.desc || 'Nessuna'}\n\n🔗 ${text}`
     }, { quoted: m });
 
-  } catch (err) {
-    console.error(err);
-    return m.reply('❌ Errore durante il download. Verifica che il link sia corretto o riprova più tardi.');
+  } catch (e) {
+    console.log('[TikTok API Error]', e?.response?.data || e.message || e);
+    return m.reply('❌ Errore durante il download del video. Verifica che il link sia corretto o riprova più tardi.');
   }
 };
 
