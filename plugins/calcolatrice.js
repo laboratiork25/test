@@ -14,14 +14,6 @@ let handler = async (m, { conn, command, text, usedPrefix }) => {
 
     // Personalizziamo le risposte per ogni comando
     let responses = {
-        'gay': {
-            emoji: '🏳️‍🌈',
-            messages: [
-                `@${tag} è ${percentage}% gay! ${percentage > 80 ? 'Pride parade quando?' : ''}`,
-                `Risultato test: @${tag} è ${percentage}% parte della comunità arcobaleno!`,
-                `🌈 @${tag} sta a ${percentage}% dalla parte sbagliata... o giusta?`
-            ]
-        },
         'lesbica': {
             emoji: '🏳️‍🌈',
             messages: [
@@ -65,6 +57,6 @@ let handler = async (m, { conn, command, text, usedPrefix }) => {
 handler.help = ['gay', 'lesbica', 'puttana', 'prostituta', 'prostituto']
     .map(v => v + ' @tag | nome');
 handler.tags = ['fun'];
-handler.command = /^(gay|lesbica|puttana|prostituta|prostituto)$/i;
+handler.command = /^(lesbica|puttana|prostituta|prostituto)$/i;
 
 export default handler;
