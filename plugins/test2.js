@@ -1,59 +1,76 @@
 import axios from 'axios';
 
-let handler = async (m, { conn, text, command }) => {
-  let imageUrl;
+let handler = async (m, { conn, command, usedPrefix, text }) => {
+  const mentions = m.mentionedJid || [];
 
-  // Se c'è una immagine citata (media)
-  if (m.quoted?.mimetype?.startsWith('image')) {
-    let media = await m.quoted.download();
-    let res = await conn.uploadToImgur ? await conn.uploadToImgur(media) : null;
-
-    if (!res?.link) return m.reply('❌ Impossibile caricare l’immagine. Riprova.');
-    imageUrl = res.link;
+  // Controllo comandi
+  if (command === 'crush' && mentions.length !== 1) {
+    return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} @utente`);
   }
 
-  // Se l'input è un link immagine diretto
-  else if (text && text.startsWith('http') && /\.(jpg|jpeg|png|webp)$/i.test(text)) {
-    imageUrl = text;
+  if (command === 'ship' && mentions.length < 2) {
+    return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} @utente1 @utente2`);
   }
 
-  // Se c'è un utente taggato, prendi la sua immagine profilo
-  else if (m.mentionedJid?.length) {
-    try {
-      imageUrl = await conn.profilePictureUrl(m.mentionedJid[0], 'image');
-    } catch {
-      imageUrl = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg';
-    }
+  let user1, user2;
+  if (command === 'crush') {
+    user1 = m.sender;
+    user2 = mentions[0];
+  } else {
+    user1 = mentions[0];
+    user2 = mentions[1];
   }
 
-  // Se niente viene fornito, usa la tua stessa foto profilo
-  else {
-    try {
-      imageUrl = await conn.profilePictureUrl(m.sender, 'image');
-    } catch {
-      imageUrl = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg';
-    }
-  }
+  // Ottieni nomi
+  const name1 = await conn.getName(user1);
+  const name2 = await conn.getName(user2);
 
-  // Chiamata API
-  const apiUrl = `https://api.siputzx.my.id/api/image2ghibli?image=${encodeURIComponent(imageUrl)}`;
+  // Ottieni le immagini profilo
+  let avatar1, avatar2;
+  try {
+    avatar1 = await conn.profilePictureUrl(user1, 'image');
+  } catch {
+    avatar1 = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg';
+  }
 
   try {
-    const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+    avatar2 = await conn.profilePictureUrl(user2, 'image');
+  } catch {
+    avatar2 = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg';
+  }
+
+  // Immagine di sfondo (puoi metterne altre a rotazione se vuoi)
+  const background = 'https://i.ibb.co/4YBNyvP/images-76.jpg';
+
+  // Percentuale casuale
+  const percent = Math.floor(Math.random() * 101);
+
+  // Chiamata API
+  const apiUrl = `https://api.siputzx.my.id/api/canvas/ship?avatar1=${encodeURIComponent(avatar1)}&avatar2=${encodeURIComponent(avatar2)}&background=${encodeURIComponent(background)}&persen=${percent}`;
+
+  try {
+    const response = await axios.get(apiUrl, {
+      responseType: 'arraybuffer'
+    });
+
     const buffer = Buffer.from(response.data, 'binary');
+
+    let caption = `💘 *${name1}* ❤️ *${name2}*\n🔮 Compatibilità: *${percent}%*`;
+    if (command === 'crush') caption = `💘 *Tu* ❤️ *${name2}*\n🔮 Compatibilità: *${percent}%*`;
 
     await conn.sendMessage(m.chat, {
       image: buffer,
-      caption: '✨ Ecco la tua immagine in stile Ghibli!',
+      caption,
+      mentions: [user1, user2],
     }, { quoted: m });
   } catch (err) {
     console.error(err);
-    await m.reply('❌ Errore nella generazione. L’immagine potrebbe essere incompatibile o l’API non ha risposto.');
+    return m.reply('❌ Errore durante la generazione dell’immagine ship/crush.');
   }
 };
 
-handler.help = ['ghibli <@utente | link immagine | rispondi a immagine>'];
-handler.tags = ['ai', 'fun', 'tools'];
-handler.command = /^ghibli$/i;
+handler.help = ['ship @utente1 @utente2', 'crush @utente'];
+handler.tags = ['fun'];
+handler.command = /^(ship|crush)$/i;
 
 export default handler;
