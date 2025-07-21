@@ -51,6 +51,6 @@ handler.before = async (m, { conn }) => {
 
 handler.help = ['math <livello>'];
 handler.tags = ['game'];
-handler.command = /^math$/i;
+handler.command = /^test$/i;
 
 export default handler;
