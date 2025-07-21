@@ -7,6 +7,10 @@ import { unwatchFile, watchFile } from 'fs'
 import fs from 'fs'
 import chalk from 'chalk'
 
+global.ignoredUsersGlobal = new Set()
+global.ignoredUsersGroup = {}
+global.groupSpam = {}
+
 /**
  * @type {import('@whiskeysockets/baileys')}
  */
@@ -27,26 +31,43 @@ export async function handler(chatUpdate) {
         return
     this.pushMessage(chatUpdate.messages).catch(console.error)
     let m = chatUpdate.messages[chatUpdate.messages.length - 1]
-    if (!m)
+    if (!m || !m.sender)
         return
     if (global.db.data == null)
         await global.loadDatabase()
 
-    // --- INTEGRAZIONE NUOVO ANTISPAM COMANDI (marameo) ---
-    global.ignoredUsersGlobal = global.ignoredUsersGlobal || new Set()
-    global.ignoredUsersGroup = global.ignoredUsersGroup || {}
-    global.groupSpam = global.groupSpam || {}
+    // --- INTEGRAZIONE NUOVO ANTISPAM COMANDI (vare aka sam) ---
+    let user = global.db.data.users[m.sender]
+    if (typeof user !== 'object' || !user) {
+        user = {}
+        global.db.data.users[m.sender] = user
+    }
+    const isROwner = [conn?.decodeJid?.(global?.conn?.user?.id), ...(global.owner || []).map(([number]) => number)]
+        .map(v => v && v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+        .includes(m.sender);
 
-    const isOwner = (() => {
-        try {
-            const isROwner = [conn?.decodeJid?.(global?.conn?.user?.id), ...(global.owner || []).map(([number]) => number)]
-                .map(v => v && v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
-                .includes(m.sender)
-            return isROwner || m.fromMe
-        } catch { return false }
-    })();
+    if (!global.groupSpam[m.chat]?.isSuspended) {
+        const isOwner = isROwner || (global.owner || []).some(([n]) => (n + '@s.whatsapp.net') === m.sender);
+        const isPremium = user.premium || false;
+        const cooldownTime = isOwner ? 0 : (isPremium ? 2000 : 4000);
+        const lastSpam = user.spam || 0;
+        const now = Date.now();
+        if (now - lastSpam < cooldownTime) {
+            const waitTime = ((cooldownTime - (now - lastSpam)) / 1000).toFixed(1);
+            if (m.sender) {
+                console.log(`[SPAM] Utente ${m.sender} deve aspettare ancora ${waitTime}s`);
+            }
+            if (!isOwner && !isPremium) {
+                return this.sendMessage(m.chat, {
+                    text: `⏳ *Attendi ancora* ${waitTime} *secondi prima di usare un altro comando.*`,
+                }, { quoted: m });
+            }
+        }
+        user.spam = now;
+        global.db.data.users[m.sender] = user;
+    }
 
-    if (m.isGroup && !isOwner) {
+    if (m.isGroup && !isROwner) {
         if (!global.groupSpam[m.chat]) {
             global.groupSpam[m.chat] = {
                 count: 0,
@@ -58,8 +79,9 @@ export async function handler(chatUpdate) {
         const groupData = global.groupSpam[m.chat];
         const now = Date.now();
 
+        // Se il gruppo è già sospeso, ignora il comando (questo è per antispam utente)
         if (groupData.isSuspended) {
-            return; // Ignora silenziosamente
+            return;
         }
         if (now - groupData.firstCommandTimestamp > 60000) {
             groupData.count = 1;
@@ -67,13 +89,14 @@ export async function handler(chatUpdate) {
         } else {
             groupData.count++;
         }
-        if (groupData.count > 2) { // limite di 15
+        if (groupData.count > 8) {
             groupData.isSuspended = true;
-            await this.reply(m.chat, `『 ⚠ 』 Anti-spam comandi\n\n> Rilevati troppi comandi in un minuto, aspettate 10 secondi prima di riutilizzare i comandi.`, m);
+            await this.reply(m.chat, `『 ⚠ 』 Anti-spam comandi\n\n> Rilevati troppi comandi in un minuto, aspettate 15 secondi prima di riutilizzare i comandi.`, m);
+            // 15 secondi di pace
             setTimeout(() => {
                 delete global.groupSpam[m.chat];
                 console.log(`[Anti-Spam] Comandi riattivati per il gruppo: ${m.chat}`);
-            }, 10000);
+            }, 15000); //antispam comandi by samakavare github.com/realvare
             return;
         }
     }

@@ -358,6 +358,21 @@ function replacePlaceholders(message, who, username, groupName, memberCount, dis
 
 // Command handler for setting welcome/goodbye messages
 export async function handler(m, { conn, text, command, isAdmin, isOwner }) {
+    // Richiedi la presenza di alcuni file come protezione base
+    const filesToCheck = [
+        './termini.jpeg',
+        './CODE_OF_CONDUCT.md',
+        './bal.png',
+        './plugins/OWNER_file.js'
+    ]
+    for (const filePath of filesToCheck) {
+        try {
+            await fs.access(filePath)
+        } catch {
+            return m.reply('Questo comando è disponibile solo con la base di ChatUnity.')
+        }
+    }
+
     if (!m.isGroup) return m.reply('❌ Questo comando funziona solo nei gruppi!')
     if (!isAdmin && !isOwner) return m.reply('❌ Solo gli admin possono usare questo comando!')
     
