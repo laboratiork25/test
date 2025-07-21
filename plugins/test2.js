@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-let handler = async (m, { conn, command, usedPrefix, text }) => {
+let handler = async (m, { conn, command, usedPrefix }) => {
   const mentions = m.mentionedJid || [];
 
-  // Controllo comandi
   if (command === 'crush' && mentions.length !== 1) {
     return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} @utente`);
   }
@@ -13,6 +12,7 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
   }
 
   let user1, user2;
+
   if (command === 'crush') {
     user1 = m.sender;
     user2 = mentions[0];
@@ -21,9 +21,20 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
     user2 = mentions[1];
   }
 
-  // Ottieni nomi
-  const name1 = await conn.getName(user1);
-  const name2 = await conn.getName(user2);
+  // Verifica che entrambi siano JID validi
+  if (!user1 || !user2 || typeof user1 !== 'string' || typeof user2 !== 'string') {
+    return m.reply('❌ Errore: utenti non validi.');
+  }
+
+  // Ottieni nomi con fallback
+  let name1 = 'Utente 1';
+  let name2 = 'Utente 2';
+  try {
+    name1 = await conn.getName(user1);
+  } catch {}
+  try {
+    name2 = await conn.getName(user2);
+  } catch {}
 
   // Ottieni le immagini profilo
   let avatar1, avatar2;
@@ -39,13 +50,9 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
     avatar2 = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg';
   }
 
-  // Immagine di sfondo (puoi metterne altre a rotazione se vuoi)
   const background = 'https://i.ibb.co/4YBNyvP/images-76.jpg';
-
-  // Percentuale casuale
   const percent = Math.floor(Math.random() * 101);
 
-  // Chiamata API
   const apiUrl = `https://api.siputzx.my.id/api/canvas/ship?avatar1=${encodeURIComponent(avatar1)}&avatar2=${encodeURIComponent(avatar2)}&background=${encodeURIComponent(background)}&persen=${percent}`;
 
   try {
@@ -61,7 +68,7 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
     await conn.sendMessage(m.chat, {
       image: buffer,
       caption,
-      mentions: [user1, user2],
+      mentions: [user1, user2]
     }, { quoted: m });
   } catch (err) {
     console.error(err);
@@ -71,6 +78,6 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
 
 handler.help = ['ship @utente1 @utente2', 'crush @utente'];
 handler.tags = ['fun'];
-handler.command = /^(shipp|crush)$/i;
+handler.command = /^(ship|crush)$/i;
 
 export default handler;
