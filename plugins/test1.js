@@ -1,31 +1,42 @@
 import axios from 'axios';
-import { downloadMediaMessage } from '@whiskeysockets/baileys'; // o il tuo metodo per ottenere la immagine profilo
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-  const taggedUser = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
+  let user = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
+
+  let ppUrl;
+  try {
+    ppUrl = await conn.profilePictureUrl(user, 'image');
+  } catch {
+    ppUrl = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg'; // fallback profilo
+  }
+
+  if (!ppUrl || !ppUrl.startsWith('http')) {
+    return m.reply('❌ Impossibile ottenere la foto profilo dell’utente.');
+  }
 
   try {
-    const ppUrl = await conn.profilePictureUrl(taggedUser, 'image').catch(() => null);
-    if (!ppUrl) return m.reply('❌ Impossibile ottenere la foto profilo dell\'utente.');
+    // URL dell'API con immagine come parametro GET
+    const apiUrl = `https://api.siputzx.my.id/api/canvas/gay?image=${encodeURIComponent(ppUrl)}`;
 
-    const response = await axios.get(`https://api.siputzx.my.id/api/canvas/gay?image=${encodeURIComponent(ppUrl)}`, {
+    const res = await axios.get(apiUrl, {
       responseType: 'arraybuffer',
     });
 
-    const buffer = Buffer.from(response.data, 'binary');
+    const imageBuffer = Buffer.from(res.data, 'binary');
 
     await conn.sendMessage(m.chat, {
-      image: buffer,
-      caption: `🌈 Wow! Ecco il risultato gay di <@${taggedUser.split('@')[0]}>`,
-      mentions: [taggedUser],
+      image: imageBuffer,
+      caption: `🌈 Percentuale gay di @${user.split('@')[0]}`,
+      mentions: [user],
     }, { quoted: m });
-  } catch (e) {
-    console.error(e);
-    await m.reply('⚠️ Si è verificato un errore. Riprova più tardi.');
+
+  } catch (err) {
+    console.error(err);
+    return m.reply('❌ Errore: l’API ha rifiutato la richiesta. Potrebbe essere un problema con l’immagine.');
   }
 };
 
-handler.help = ['gay @utente'];
+handler.help = ['gay @user'];
 handler.tags = ['fun'];
 handler.command = /^gayy$/i;
 
