@@ -1,54 +1,56 @@
 import axios from 'axios';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  console.log('Input ricevuto:', text);
+  const livelliValidi = ['noob', 'easy', 'medium', 'hard', 'impossible', 'impossible1', 'impossible2', 'impossible3', 'impossible4', 'impossible5'];
+  const livello = text?.toLowerCase().trim() || 'easy';
 
-  if (!text || !/^https?:\/\/[^\s]+tiktok\.com/.test(text)) {
-    return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} <link TikTok valido>\n\n📌 Esempio:\n${usedPrefix + command} https://vt.tiktok.com/ZSjXNEnbC/`);
+  if (!livelliValidi.includes(livello)) {
+    return m.reply(`❗ Livello non valido.\nUsa uno di questi livelli:\n${livelliValidi.join(', ')}\n\n📌 Esempio:\n${usedPrefix + command} hard`);
   }
 
-  const apiUrl = `https://api.siputzx.my.id/api/tiktok?url=${encodeURIComponent(text.trim())}`;
-  console.log('API chiamata:', apiUrl);
-
   try {
-    const response = await axios.get(apiUrl);
-    console.log('Risposta API completa:', response.data);
+    const { data } = await axios.get(`https://api.siputzx.my.id/api/games/maths?level=${livello}`);
+    if (!data || !data.question) throw '⚠️ Errore nella risposta dell’API.';
 
-    const data = response.data;
-    if (!data || !data.result) {
-      console.log('❌ Risultato mancante o struttura inattesa');
-      return m.reply('⚠️ Nessun risultato valido trovato. Forse il link è scaduto o l’API ha cambiato formato.');
-    }
+    const timeout = 30 * 1000; // 30 secondi per rispondere
+    const question = data.question;
+    const answer = data.answer;
 
-    const result = data.result;
-    const videoUrl = result.video;
-    console.log('Video URL:', videoUrl);
+    // Salva temporaneamente la risposta corretta
+    conn.mathGame = conn.mathGame || {};
+    conn.mathGame[m.sender] = {
+      answer,
+      timeout: setTimeout(() => {
+        m.reply(`⏰ Tempo scaduto!\n❌ La risposta corretta era: *${answer}*`);
+        delete conn.mathGame[m.sender];
+      }, timeout)
+    };
 
-    if (!videoUrl) {
-      console.log('❌ Campo video mancante nella risposta');
-      return m.reply('⚠️ Il video non è disponibile o non può essere scaricato.');
-    }
-
-    const caption = [
-      '🎵 TikTok scaricato con successo!',
-      `👤 Autore: ${result.author?.nickname || 'Sconosciuto'}`,
-      `📝 Descrizione: ${result.desc || 'Nessuna'}`,
-      `🔗 ${text.trim()}`
-    ].join('\n');
-
-    return conn.sendMessage(m.chat, {
-      video: { url: videoUrl },
-      caption
-    }, { quoted: m });
+    m.reply(`🧠 *Domanda di matematica (${livello}):*\n\n${question}\n\n⏳ Hai *30 secondi* per rispondere.\nRispondi semplicemente con il numero!`);
 
   } catch (e) {
-    console.error('🔴 Errore axios:', e.response?.status, e.response?.data || e.message);
-    return m.reply('❌ Errore durante il download del video. Verifica che il link sia corretto o riprova più tardi.');
+    console.log(e);
+    return m.reply('❌ Errore durante il recupero della domanda. Riprova più tardi.');
   }
 };
 
-handler.help = ['tiktok <url>'];
-handler.tags = ['downloader'];
-handler.command = /^tiktok$/i;
+// Gestione della risposta dell’utente
+handler.before = async (m, { conn }) => {
+  if (!conn.mathGame || !conn.mathGame[m.sender]) return false;
+  const game = conn.mathGame[m.sender];
+
+  if (m.text.trim() === String(game.answer)) {
+    clearTimeout(game.timeout);
+    delete conn.mathGame[m.sender];
+    m.reply('✅ *Risposta corretta!*\n🎉 Complimenti!');
+    return true;
+  }
+
+  return false;
+};
+
+handler.help = ['math <livello>'];
+handler.tags = ['game'];
+handler.command = /^math$/i;
 
 export default handler;
