@@ -4,12 +4,20 @@ let handler = async (m, { conn, text, command }) => {
   let imageUrl = text
 
   // Se rispondi a un'immagine
-  if (!imageUrl && m.quoted && m.quoted.mimetype && m.quoted.mimetype.startsWith('image')) {
-    // Scarica immagine in buffer
-    let buffer = await conn.downloadMedia(m.quoted)
-    // Qui serve host esterno per upload, altrimenti non puoi fornire URL all'API
-    // Se hai un metodo per upload, usalo qui e metti imageUrl = URL ottenuto
-    return m.reply('⚠️ Per favore fornisci un link diretto all\'immagine perché il bot non supporta upload automatico.')
+  if (!imageUrl && m.quoted && m.quoted.mtype && m.quoted.mtype.includes('image')) {
+    try {
+      // Scarica l'immagine come buffer
+      let media = await conn.downloadMediaMessage(m.quoted)
+      // Invia l'immagine come file e chiedi all'utente di fornire un URL
+      await conn.sendMessage(m.chat, { 
+        image: media, 
+        caption: '⚠️ Per favore carica questa immagine su un host esterno (es. imgur.com) e invia il link diretto qui.'
+      }, { quoted: m })
+      return
+    } catch (e) {
+      console.error(e)
+      return m.reply('❌ Errore nel scaricare l\'immagine. Per favore fornisci un link diretto.')
+    }
   }
 
   if (!imageUrl) return m.reply(`❗ Per favore invia o rispondi a un'immagine o usa un link diretto.\nEsempio: *.ghibli <link_immagine>*`)
