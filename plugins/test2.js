@@ -1,33 +1,48 @@
 import axios from 'axios';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text || !/^https?:\/\/(www\.)?(vt|tiktok)\.com/.test(text)) {
-    return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} <link TikTok>\n\n📌 Esempio:\n${usedPrefix + command} https://vt.tiktok.com/ZSjXNEnbC/`);
+  console.log('Input ricevuto:', text);
+
+  if (!text || !/^https?:\/\/[^\s]+tiktok\.com/.test(text)) {
+    return m.reply(`❗ Usa il comando così:\n${usedPrefix + command} <link TikTok valido>\n\n📌 Esempio:\n${usedPrefix + command} https://vt.tiktok.com/ZSjXNEnbC/`);
   }
 
-  const api = `https://api.siputzx.my.id/api/tiktok?url=${encodeURIComponent(text)}`;
+  const apiUrl = `https://api.siputzx.my.id/api/tiktok?url=${encodeURIComponent(text.trim())}`;
+  console.log('API chiamata:', apiUrl);
 
   try {
-    const { data } = await axios.get(api);
+    const response = await axios.get(apiUrl);
+    console.log('Risposta API completa:', response.data);
 
+    const data = response.data;
     if (!data || !data.result) {
-      return m.reply('⚠️ Nessun risultato valido trovato. Forse il link è scaduto.');
+      console.log('❌ Risultato mancante o struttura inattesa');
+      return m.reply('⚠️ Nessun risultato valido trovato. Forse il link è scaduto o l’API ha cambiato formato.');
     }
 
     const result = data.result;
-    const video = result.video;
+    const videoUrl = result.video;
+    console.log('Video URL:', videoUrl);
 
-    if (!video) {
+    if (!videoUrl) {
+      console.log('❌ Campo video mancante nella risposta');
       return m.reply('⚠️ Il video non è disponibile o non può essere scaricato.');
     }
 
-    await conn.sendMessage(m.chat, {
-      video: { url: video },
-      caption: `🎵 *TikTok scaricato con successo!*\n👤 Autore: ${result.author?.nickname || 'Sconosciuto'}\n📝 Descrizione: ${result.desc || 'Nessuna'}\n\n🔗 ${text}`
+    const caption = [
+      '🎵 TikTok scaricato con successo!',
+      `👤 Autore: ${result.author?.nickname || 'Sconosciuto'}`,
+      `📝 Descrizione: ${result.desc || 'Nessuna'}`,
+      `🔗 ${text.trim()}`
+    ].join('\n');
+
+    return conn.sendMessage(m.chat, {
+      video: { url: videoUrl },
+      caption
     }, { quoted: m });
 
   } catch (e) {
-    console.log('[TikTok API Error]', e?.response?.data || e.message || e);
+    console.error('🔴 Errore axios:', e.response?.status, e.response?.data || e.message);
     return m.reply('❌ Errore durante il download del video. Verifica che il link sia corretto o riprova più tardi.');
   }
 };
