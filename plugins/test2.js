@@ -1,56 +1,38 @@
 import axios from 'axios';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  const livelliValidi = ['noob', 'easy', 'medium', 'hard', 'impossible', 'impossible1', 'impossible2', 'impossible3', 'impossible4', 'impossible5'];
-  const livello = text?.toLowerCase().trim() || 'easy';
+  // Prendi immagine da testo o da messaggio citato o da profilo taggato
+  let url = text || (m.quoted && m.quoted.image ? await conn.getFile(m.quoted) : null);
 
-  if (!livelliValidi.includes(livello)) {
-    return m.reply(`❗ Livello non valido.\nUsa uno di questi livelli:\n${livelliValidi.join(', ')}\n\n📌 Esempio:\n${usedPrefix + command} hard`);
+  // Se c’è un tag e non testo, prova a prendere la foto profilo del taggato
+  if (!url && m.mentionedJid && m.mentionedJid.length > 0) {
+    try {
+      url = await conn.profilePictureUrl(m.mentionedJid[0], 'image');
+    } catch {
+      return m.reply('❌ Impossibile ottenere la foto profilo del taggato.');
+    }
   }
+
+  if (!url) return m.reply(`❗ Usa: ${usedPrefix + command} <url immagine> oppure tagga un utente con ${usedPrefix + command} @utente`);
 
   try {
-    const { data } = await axios.get(`https://api.siputzx.my.id/api/games/maths?level=${livello}`);
-    if (!data || !data.question) throw '⚠️ Errore nella risposta dell’API.';
+    // Chiamata API con URL immagine
+    const response = await axios.get('https://api.siputzx.my.id/api/m/facepalm', {
+      params: { image: url }
+    });
 
-    const timeout = 30 * 1000; // 30 secondi per rispondere
-    const question = data.question;
-    const answer = data.answer;
+    if (!response.data || !response.data.result) return m.reply('❌ Nessun risultato dall’API.');
 
-    // Salva temporaneamente la risposta corretta
-    conn.mathGame = conn.mathGame || {};
-    conn.mathGame[m.sender] = {
-      answer,
-      timeout: setTimeout(() => {
-        m.reply(`⏰ Tempo scaduto!\n❌ La risposta corretta era: *${answer}*`);
-        delete conn.mathGame[m.sender];
-      }, timeout)
-    };
-
-    m.reply(`🧠 *Domanda di matematica (${livello}):*\n\n${question}\n\n⏳ Hai *30 secondi* per rispondere.\nRispondi semplicemente con il numero!`);
-
+    // Invia immagine risultante
+    await conn.sendMessage(m.chat, { image: { url: response.data.result }, caption: '🤦‍♂️ Facepalm!' }, { quoted: m });
   } catch (e) {
-    console.log(e);
-    return m.reply('❌ Errore durante il recupero della domanda. Riprova più tardi.');
+    console.error(e);
+    m.reply('❌ Errore nel chiamare l’API facepalm.');
   }
 };
 
-// Gestione della risposta dell’utente
-handler.before = async (m, { conn }) => {
-  if (!conn.mathGame || !conn.mathGame[m.sender]) return false;
-  const game = conn.mathGame[m.sender];
-
-  if (m.text.trim() === String(game.answer)) {
-    clearTimeout(game.timeout);
-    delete conn.mathGame[m.sender];
-    m.reply('✅ *Risposta corretta!*\n🎉 Complimenti!');
-    return true;
-  }
-
-  return false;
-};
-
-handler.help = ['math <livello>'];
-handler.tags = ['game'];
-handler.command = /^test$/i;
+handler.help = ['facepalm <url/tag>'];
+handler.tags = ['image', 'fun'];
+handler.command = /^facepalm$/i;
 
 export default handler;
