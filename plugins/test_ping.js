@@ -1,22 +1,18 @@
 import axios from 'axios'
 
-let handler = async (m, { conn, text, args, command }) => {
-  let imageUrl = text || (m.quoted?.mimetype?.startsWith('image') ? await conn.downloadAndUpload(m.quoted, 'url') : null)
+let handler = async (m, { conn, text, command }) => {
+  let imageUrl = text
 
-  // Se l'utente risponde a un'immagine
+  // Se rispondi a un'immagine
   if (!imageUrl && m.quoted && m.quoted.mimetype && m.quoted.mimetype.startsWith('image')) {
-    let buffer = await m.quoted.download()
-    let file = await conn.uploadFile(buffer)
-    imageUrl = file?.url
+    // Scarica immagine in buffer
+    let buffer = await conn.downloadMedia(m.quoted)
+    // Qui serve host esterno per upload, altrimenti non puoi fornire URL all'API
+    // Se hai un metodo per upload, usalo qui e metti imageUrl = URL ottenuto
+    return m.reply('⚠️ Per favore fornisci un link diretto all\'immagine perché il bot non supporta upload automatico.')
   }
 
-  if (!imageUrl && m.msg?.mimetype?.startsWith('image')) {
-    let buffer = await m.download()
-    let file = await conn.uploadFile(buffer)
-    imageUrl = file?.url
-  }
-
-  if (!imageUrl) return m.reply(`❗ Per favore, invia o rispondi a un'immagine o usa un link diretto.\n\nEsempio: *.ghibli <immagine>*`)
+  if (!imageUrl) return m.reply(`❗ Per favore invia o rispondi a un'immagine o usa un link diretto.\nEsempio: *.ghibli <link_immagine>*`)
 
   m.react('🎨')
 
