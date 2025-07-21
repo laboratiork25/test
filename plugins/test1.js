@@ -1,43 +1,46 @@
 import axios from 'axios';
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
+  // Ottieni utente menzionato o citato o autore del messaggio
   let user = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
 
-  let ppUrl;
+  // Ottieni nome visibile
+  let name = await conn.getName(user);
+  let randomPercent = Math.floor(Math.random() * 100) + 1; // 1-100
+
+  // Ottieni foto profilo
+  let avatarUrl;
   try {
-    ppUrl = await conn.profilePictureUrl(user, 'image');
+    avatarUrl = await conn.profilePictureUrl(user, 'image');
   } catch {
-    ppUrl = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg'; // fallback profilo
+    avatarUrl = 'https://telegra.ph/file/6880771a42bad09dd6087.jpg'; // fallback
   }
 
-  if (!ppUrl || !ppUrl.startsWith('http')) {
-    return m.reply('❌ Impossibile ottenere la foto profilo dell’utente.');
-  }
+  // Componi URL API
+  const apiUrl = `https://api.siputzx.my.id/api/canvas/gay?nama=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatarUrl)}&num=${randomPercent}`;
 
   try {
-    // URL dell'API con immagine come parametro GET
-    const apiUrl = `https://api.siputzx.my.id/api/canvas/gay?image=${encodeURIComponent(ppUrl)}`;
-
-    const res = await axios.get(apiUrl, {
+    // Richiesta all'API
+    const response = await axios.get(apiUrl, {
       responseType: 'arraybuffer',
     });
 
-    const imageBuffer = Buffer.from(res.data, 'binary');
+    const buffer = Buffer.from(response.data, 'binary');
 
     await conn.sendMessage(m.chat, {
-      image: imageBuffer,
-      caption: `🌈 Percentuale gay di @${user.split('@')[0]}`,
+      image: buffer,
+      caption: `🌈 @${user.split('@')[0]} è gay al ${randomPercent}% 🏳️‍🌈`,
       mentions: [user],
     }, { quoted: m });
 
-  } catch (err) {
-    console.error(err);
-    return m.reply('❌ Errore: l’API ha rifiutato la richiesta. Potrebbe essere un problema con l’immagine.');
+  } catch (e) {
+    console.error(e);
+    return m.reply('❌ Errore durante la generazione dell\'immagine. Controlla se l\'avatar è valido.');
   }
 };
 
-handler.help = ['gay @user'];
+handler.help = ['gay @utente'];
 handler.tags = ['fun'];
-handler.command = /^gayy$/i;
+handler.command = /^gay$/i;
 
 export default handler;
