@@ -1,64 +1,60 @@
 import axios from 'axios';
+const tempmails = {}; // salviamo gli indirizzi temporanei per ID utente
 
-global.tempEmails = global.tempEmails || {};
-
-const headers = {
+const rapidHeaders = {
   'x-rapidapi-host': 'tempmail-so.p.rapidapi.com',
-  // 'x-rapidapi-key': 'LA_TUA_API_KEY' // opzionale
+  'x-rapidapi-key': 'INSERISCI_LA_TUA_API_KEY' // ← INSERISCI LA TUA API KEY QUI
 };
 
-const handler = async (m, { conn, command }) => {
-  const sender = m.sender;
-  const userData = global.tempEmails[sender];
+const handler = async (m, { text, args, command, conn }) => {
+  const userId = m.sender;
 
-  switch (command) {
-    case 'creaemail': {
-      try {
-        const { data } = await axios.get('https://tempmail-so.p.rapidapi.com/request/domains', { headers });
-        const domain = data[0] || 'tempmail.wtf';
-        const username = `user_${Math.random().toString(36).substring(7)}`;
-        const email = `${username}@${domain}`;
-
-        global.tempEmails[sender] = {
-          email,
-          id: username
-        };
-
-        return m.reply(`📧 Email temporanea creata:\n\n✉️ *${email}*\n\nUsa *.emailinbox* per vedere i messaggi.`);
-      } catch (e) {
-        console.error(e);
-        return m.reply('❌ Errore nella creazione dell\'email temporanea.');
-      }
+  if (command === 'createmail') {
+    try {
+      const res = await axios.get('https://tempmail-so.p.rapidapi.com/new', { headers: rapidHeaders });
+      const email = res.data.email;
+      tempmails[userId] = email;
+      await m.reply(`📧 Email temporanea generata:\n\n*${email}*\n\nUsa *.mailinbox* per controllare i messaggi.`);
+    } catch (err) {
+      console.error(err);
+      await m.reply('❌ Errore durante la creazione dell’email temporanea.');
     }
+  }
 
-    case 'emailinfo': {
-      if (!userData) return m.reply('⚠️ Nessuna email salvata. Usa *.creaemail*');
-      return m.reply(`📧 Email salvata:\n\n✉️ *${userData.email}*\n🆔 *ID inbox:* ${userData.id}`);
+  if (command === 'mailinbox') {
+    const email = tempmails[userId];
+    if (!email) return m.reply('⚠️ Nessuna email temporanea trovata. Usa prima *.createmail*');
+
+    try {
+      const res = await axios.get('https://tempmail-so.p.rapidapi.com/emails', {
+        headers: rapidHeaders,
+        params: { email }
+      });
+
+      const mails = res.data;
+      if (mails.length === 0) return m.reply('📭 Nessun messaggio trovato.');
+
+      let msg = `📨 Messaggi in arrivo per *${email}*:\n\n`;
+      mails.slice(0, 5).forEach((mail, i) => {
+        msg += `🔹 *${i + 1}. Da:* ${mail.from.address}\n📌 *Oggetto:* ${mail.subject}\n📅 ${mail.date}\n\n`;
+      });
+
+      await m.reply(msg.trim());
+    } catch (err) {
+      console.error(err);
+      await m.reply('❌ Errore durante il recupero dei messaggi.');
     }
+  }
 
-    case 'emailinbox': {
-      if (!userData) return m.reply('❗ Prima crea una email con *.creaemail*');
-      try {
-        const { data } = await axios.get(`https://tempmail-so.p.rapidapi.com/request/mail/id/${userData.id}`, { headers });
-
-        if (!data.length) return m.reply(`📭 Nessun messaggio su *${userData.email}*`);
-
-        let msg = `📥 Messaggi per *${userData.email}*:\n\n`;
-        for (let i = 0; i < Math.min(5, data.length); i++) {
-          msg += `📌 *Mittente:* ${data[i].mail_from}\n📄 *Oggetto:* ${data[i].mail_subject}\n🕒 *Data:* ${data[i].mail_date}\n\n`;
-        }
-
-        return m.reply(msg.trim());
-      } catch (e) {
-        console.error(e);
-        return m.reply('❌ Errore nel recupero dei messaggi.');
-      }
-    }
-
-    default:
-      return m.reply('❌ Comando non riconosciuto.');
+  if (command === 'mailreset') {
+    if (!tempmails[userId]) return m.reply('❗ Non hai una email temporanea da resettare.');
+    delete tempmails[userId];
+    await m.reply('♻️ Email temporanea resettata. Usa *.createmail* per crearne una nuova.');
   }
 };
 
-handler.command = /^(creaemail|emailinfo|emailinbox)$/i;
+handler.help = ['createmail', 'mailinbox', 'mailreset'];
+handler.tags = ['tools'];
+handler.command = /^(createmail|mailinbox|mailreset)$/i;
+
 export default handler;
