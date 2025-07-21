@@ -1,64 +1,44 @@
 import axios from 'axios'
 
-let emailStorage = {} // Memorizza email temporanee per ogni utente
+let handler = async (m, { text, command }) => {
+  if (!text) return m.reply('❗ Per favore, inserisci un prompt per generare il video.\n\nEsempio: *.aivideo una tigre nella neve*')
 
-const rapidApiKey = '8bb342ee47mshe971e098cd28310p140553jsn9c0337559f2d'
-
-let handler = async (m, { command, conn, text }) => {
-  const userId = m.sender
-
-  if (command === 'emailtemp') {
-    try {
-      const res = await axios.get('https://tempmail-so.p.rapidapi.com/request/domains/', {
-        headers: {
-          'x-rapidapi-host': 'tempmail-so.p.rapidapi.com',
-          'x-rapidapi-key': rapidApiKey
-        }
-      })
-
-      const domains = res.data
-      const username = `user${Math.floor(Math.random() * 100000)}`
-      const email = `${username}${domains[0]}`
-
-      emailStorage[userId] = email
-
-      await m.reply(`📧 Email temporanea creata:\n\n👉 *${email}*\n\nUsa *.emailmsg* per leggere i messaggi.`)
-    } catch (err) {
-      console.error(err)
-      await m.reply('❌ Errore durante la creazione dell’email temporanea.')
+  const options = {
+    method: 'POST',
+    url: 'https://runwayml.p.rapidapi.com/extend',
+    headers: {
+      'x-rapidapi-key': '8bb342ee47mshe971e098cd28310p140553jsn9c0337559f2d',
+      'x-rapidapi-host': 'runwayml.p.rapidapi.com',
+      'Content-Type': 'application/json'
+    },
+    data: {
+      uuid: '', // opzionale, lasciamo vuoto per nuova generazione
+      model: 'gen2',
+      text_prompt: text,
+      motion: 5, // quantità di movimento (1–10)
+      seed: 0,   // randomizzazione
+      callback_url: '' // puoi lasciarlo vuoto
     }
   }
 
-  if (command === 'emailmsg') {
-    const email = emailStorage[userId]
-    if (!email) return await m.reply('❗ Prima devi generare un\'email con *.emailtemp*')
+  try {
+    m.react('🎥')
+    const res = await axios.request(options)
+    const data = res.data
 
-    try {
-      const res = await axios.get(`https://tempmail-so.p.rapidapi.com/request/mail/id/${email}`, {
-        headers: {
-          'x-rapidapi-host': 'tempmail-so.p.rapidapi.com',
-          'x-rapidapi-key': rapidApiKey
-        }
-      })
-
-      const messages = res.data
-      if (!messages.length) return await m.reply(`📭 Nessun messaggio trovato su *${email}*`)
-
-      let list = `📥 Messaggi per *${email}*:\n\n`
-      for (let msg of messages.slice(0, 5)) {
-        list += `🟣 *Da:* ${msg.mail_from}\n📌 *Oggetto:* ${msg.mail_subject}\n📝 *Testo:* ${msg.mail_text_only.slice(0, 200)}...\n\n`
-      }
-
-      await m.reply(list.trim())
-    } catch (err) {
-      console.error(err)
-      await m.reply('❌ Errore durante il recupero dei messaggi.')
+    if (data && data.status === 'processing') {
+      return m.reply(`📽️ Video in generazione!\nAttendi qualche istante e visita:\n🔗 ${data.result_url || '[Nessun URL fornito]'}\n\n⚠️ Potrebbe impiegare qualche minuto.`)
+    } else {
+      return m.reply(`⚠️ Errore: la richiesta non è stata accettata.\nControlla se il tuo piano RapidAPI consente l'uso di RunwayML.`)
     }
+  } catch (err) {
+    console.error(err.response?.data || err.message)
+    m.reply('❌ Errore durante la generazione del video. Controlla la tua chiave o i limiti di RapidAPI.')
   }
 }
 
-handler.command = ['emailtemp', 'emailmsg']
-handler.tags = ['tools']
-handler.help = ['emailtemp', 'emailmsg']
+handler.help = ['aivideo <testo>']
+handler.tags = ['ai', 'video']
+handler.command = /^aivideo$/i
 
 export default handler
