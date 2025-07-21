@@ -41,6 +41,6 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
 
 handler.help = ['gay @utente'];
 handler.tags = ['fun'];
-handler.command = /^gay$/i;
+handler.command = /^gayy$/i;
 
 export default handler;
