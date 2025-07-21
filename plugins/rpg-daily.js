@@ -49,7 +49,7 @@ let handler = async (m, { conn, isPrems }) => {
 
 handler.help = ['daily']
 handler.tags = ['rpg']
-handler.command = ['daily', 'Unitycoins', 'claim']
+handler.command = [ 'giornaliero', 'claim']
 handler.register = true
 
 function formattaTempo(secondi) {

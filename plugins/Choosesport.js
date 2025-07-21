@@ -1,3 +1,10 @@
+// Fix: Crea il file rss_sources.json se non esiste (workaround per errori di altri moduli che lo richiedono)
+import fs from 'fs'
+const rssPath = './rss_sources.json'
+if (!fs.existsSync(rssPath)) {
+  fs.writeFileSync(rssPath, JSON.stringify([]))
+}
+
 let handler = async (m, { conn }) => {
   global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
 

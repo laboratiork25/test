@@ -71,6 +71,7 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈╭─✦ *MUSICA & AUDIO* ✦═╗  
 ┃◈┃• 🎵 *.play* (canzone)  
 ┃◈┃• 🎥 *.playlist*   
+┃◈┃• 🎥 *.ytsearch*  
 ┃◈┃• 🎶 *.shazam* (audio)  
 ┃◈┃• 🔊 *.tomp3* (video)  
 ┃◈┃• 🎤 *.lyrics* (artista-titolo)  
@@ -88,10 +89,11 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 📚 *.wikipedia* (argomento)
 ┃◈┃• 🔍 *.checkscam* (check sito)
 ┃◈┃• 📜 *.dashboard*  
-┃◈┃• 🔍 *.phsearch*  
 ┃◈┃• 🔍 *.cercaimmagine* 
-┃◈┃• 🎼 *.fyadd*  
 ┃◈┃• ❓ *.script*  
+┃◈┃• 🛡️ *.offusca*  
+┃◈┃• 📰 *.news*  
+┃◈┃• 🗞️ *.notiziario*  
 ┃◈╰━━━━━━━━━━━━┈⊷  
 ┃◈  
 ┃◈╭✦ *IMMAGINI & MODIFICA* ✦╗  
@@ -99,7 +101,8 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 🖼️ *.png* (sticker a foto)  
 ┃◈┃• 📷 *.hd* (migliora qualità foto)  
 ┃◈┃• 🖼️ *.rimuovisfondo* (foto)  
-┃◈┃• 🔍 *.rivela* (foto nascosta)  
+┃◈┃• 🔍 *.rivela* (foto nascosta
+┃◈┃• 🤕 *.bonk* (meme))  
 ┃◈┃• 🖼️ *.toimg* (da sticker)  
 ┃◈┃• 📖 *.leggi* (foto)  
 ┃◈┃• 🌀 *.blur* (sfoca immagine)  
@@ -107,6 +110,24 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 🎴 *.hornycard* [@utente]  
 ┃◈┃• 🧠 *.stupido/a* @  
 ┃◈┃• 🌀 *.emojimix*  
+┃◈┃• 🎯 *.wanted*  @
+┃◈┃• 🤡 *.scherzo*  @
+┃◈┃• 📱 *.nokia*  @
+┃◈┃• 🚔 *.carcere*  @
+┃◈┃• 📢 *.ads*  @
+┃◈╰━━━━━━━━━━━━┈⊷  
+┃◈ 
+┃◈╭✦ *POKEMON* ✦╗     
+┃◈┃• 🥚 *.apripokemon*
+┃◈┃• 🛒 *.buypokemon*
+┃◈┃• 🏆 *.classificapokemon*
+┃◈┃• 🎁 *.pacchetti*
+┃◈┃• ⚔️ *.combatti*
+┃◈┃• 🔄 *.evolvi*
+┃◈┃• 🌑 *.darknessinfo*
+┃◈┃• 🎒 *.inventario*
+┃◈┃• 🍀 *.pity*
+┃◈┃• 🔄 *.scambia*
 ┃◈╰━━━━━━━━━━━━┈⊷  
 ┃◈  
 ┃◈╭─✦ *GANG SYSTEM* ✦═╗  
@@ -128,6 +149,11 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 🧮 *.mate* (problema mate)  
 ┃◈┃• 📈 *.scf* (sasso carta forbici)  
 ┃◈┃• 🐾 *.pokedex* (info Pokémon)  
+┃◈┃• 🏳️ *.bandiera*  
+┃◈┃• 🎶 *.ic*  
+┃◈┃• 🤖 *.auto*  
+┃◈┃• ⚽ *.fut*  
+┃◈┃• 🎯 *.missioni*  
 ┃◈╰━━━━━━━━━━━━┈⊷  
 ┃◈  
 ┃◈╭✦ *ECONOMIA & CLASSIFICHE* ✦╗  
@@ -172,6 +198,7 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• ♿ *.disabile* @  
 ┃◈┃• ♿ *.mongoloide* @  
 ┃◈┃• ⚫ *.negro* @  
+┃◈┃• 🐓 *.cornuto* @  
 ┃◈╰━━━━━━━━━━━━┈⊷  
 ┃◈  
 ┃◈╭✦ *TEST PERSONALITÀ* ✦╗  
@@ -184,11 +211,6 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 🏹 *.nomeninja*  
 ┃◈┃• 😈 *.infame*  
 ┃◈┃• 🙏 *.topbestemmie*  
-┃◈╰━━━━━━━━━━━━┈⊷  
-┃◈  
-┃◈╭✦ *STICKERS & MEDIA* ✦╗  
-┃◈┃• 🤕 *.bonk* (meme)  
-┃◈┃• 👑 *.autoadmin*  
 ┃◈╰━━━━━━━━━━━━┈⊷  
 ┃◈ 
 ┃◈┃• *𝑽𝑬𝑹𝑺𝑰𝑶𝑵𝑬:* ${vs}  

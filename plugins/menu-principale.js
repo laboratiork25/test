@@ -49,6 +49,7 @@ function generateMenuText(prefix, botName, userCount) {
 ┃◈┃• 📜 *${prefix}candidati*
 ┃◈┃• 📥 *${prefix}installa*
 ┃◈┃• 📖 *${prefix}guida*
+┃◈┃• 📝 *${prefix}canali* 
 ┃◈┃• ⚙ *${prefix}sistema*
 ┃◈┃• ❓ *${prefix}FAQ*
 ┃◈┃• 🚀 *${prefix}ping*
