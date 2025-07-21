@@ -71,6 +71,6 @@ let handler = async (m, { conn, command, usedPrefix, text }) => {
 
 handler.help = ['ship @utente1 @utente2', 'crush @utente'];
 handler.tags = ['fun'];
-handler.command = /^(ship|crush)$/i;
+handler.command = /^(shipp|crush)$/i;
 
 export default handler;
